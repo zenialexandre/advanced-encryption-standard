@@ -2,11 +2,11 @@ import PySimpleGUI as psg
 from constants import FILE_PATH, OUTPUT_FILE_NAME, CIPHER_KEY, OK, CANCEL
 
 '''
-    This GUI returns a tuple of three 'str'.
+    This GUI returns a tuple of two 'str' and a 'list[str]'.
     [file_path, output_file_name, cipher_key].
 '''
 
-def generate_program_gui() -> tuple[str, str, str]:
+def generate_program_gui() -> tuple[str, str, list[str]]:
     psg.theme('DarkTeal2')
     window_layout: list[list] = [
         [psg.T('')],
@@ -34,8 +34,10 @@ def generate_program_gui() -> tuple[str, str, str]:
             break
         elif (event == OK):
             if (all(map(str.strip, [values[key] for key in input_list]))):
-                if (len(values[CIPHER_KEY].split(',')) == 16):
-                    return values[FILE_PATH], values[OUTPUT_FILE_NAME], values[CIPHER_KEY]
+                cipher_key_splitted: list[str] = values[CIPHER_KEY].split(',')
+
+                if (len(cipher_key_splitted) == 16):
+                    return values[FILE_PATH], values[OUTPUT_FILE_NAME], cipher_key_splitted
                 else:
                     prompt('The cipher key must have 16 bytes.')
             else:
