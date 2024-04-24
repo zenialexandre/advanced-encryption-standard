@@ -2,7 +2,7 @@ from program_gui import generate_program_gui
 import os
 import shutil
 
-file_path: str = generate_program_gui()
+(file_path, output_file_name, cipher_key) = generate_program_gui()
 
 def upload_inputted_file(
     file_path: str
