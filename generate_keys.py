@@ -19,4 +19,13 @@ def make_state_matrix(
 def get_generated_key_schedule(
     state_matrix: list[list[str]]
 ) -> list[list[str]]:
-    round_keys = []
+    # Isso deveria estar dentro de um for range(10) = 10 round_keys, cada uma com 4 words
+    round_key: list[list[str]] = get_round_key_with_rotated_words(state_matrix)
+
+def get_round_key_with_rotated_words(
+    state_matrix: list[list[str]]
+) -> list[list[str]]:
+    for index, word in enumerate(state_matrix):
+        state_matrix[index] = np.roll(word, -1).tolist()
+
+    return state_matrix
