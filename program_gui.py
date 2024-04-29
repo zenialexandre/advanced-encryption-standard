@@ -5,7 +5,6 @@ from constants import FILE_PATH, OUTPUT_FILE_NAME, CIPHER_KEY, OK, CANCEL
     This GUI returns a tuple of two 'str' and a 'list[str]'.
     [file_path, output_file_name, cipher_key_splitted].
 '''
-
 def generate_program_gui() -> tuple[str, str, list[str]]:
     psg.theme('DarkTeal2')
     window_layout: list[list] = [
