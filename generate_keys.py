@@ -6,6 +6,19 @@ from binascii import hexlify
     [[word], [word], [word], [word]]
 '''
 
+ROUND_CONSTANT_TABLE: dict = {
+    1: 0x01,
+    2: 0x02,
+    3: 0x04,
+    4: 0x08,
+    5: 0x10,
+    6: 0x20,
+    7: 0x40,
+    8: 0x80,
+    9: 0x1b,
+    10: 0x36
+}
+
 def expand_keys(
     cipher_key_splitted: list[str]
 ) -> any:
@@ -31,8 +44,8 @@ def get_generated_key_schedule(
     key_schedule: list[list[str]] = []
     s_box: list[list[bytes]] = get_static_s_box()
 
-    #for _ in range(10):
-    key_schedule.append(get_round_key(state_matrix, s_box))
+    for index in range(10):
+        key_schedule.append(get_round_key(index + 1, state_matrix, s_box))
 
     return key_schedule
 
@@ -59,12 +72,16 @@ def get_static_s_box() -> list[list[bytes]]:
     return [[hexlify(bytes([byte])).decode() for byte in row] for row in static_s_box]
 
 def get_round_key(
+    index: int,
     state_matrix: list[list[str]],
     s_box: list[list[bytes]]
 ) -> list[list[bytes]]:
     round_key: list[list[str]] = get_round_key_after_rotword(state_matrix)
     round_key_hexadecimal: list[list[bytes]] = get_converted_round_key_to_hexadecimal(round_key)
     round_key_subword: list[list[bytes]] = get_round_key_after_subword(s_box, round_key_hexadecimal)
+    round_constant: list[bytes] = get_generated_round_constant(index)
+
+    print(round_constant)
 
     return round_key_subword
 
@@ -98,3 +115,12 @@ def get_round_key_after_subword(
         round_key_subword[word_index] = word
 
     return round_key_subword
+
+def get_generated_round_constant(
+    index: int
+) -> list[bytes]:
+    round_constant: list[bytes] = []
+    round_constant.append(hexlify(np.uint8(ROUND_CONSTANT_TABLE[index])).decode())
+    for _ in range(3): round_constant.append(hexlify(np.uint8(0)).decode())
+
+    return round_constant
