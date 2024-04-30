@@ -38,18 +38,23 @@ def make_state_matrix(
 def get_generated_key_schedule(
     state_matrix: list[list[str]]
 ) -> list[list[str]]:
-    # Isso deveria estar dentro de um for range(10) = 10 round_keys, cada uma com 4 words
-    # Deveria ser algo tipo, round_key = get_round_key() -> isso chama a rotacao..etc...
-    # Ai vai adicionando na key_schedule, e retorna no final
+    state_matrix_as_hexadecimal: list[list[str]] = get_converted_to_hexadecimal(state_matrix)
     key_schedule: list[list[str]] = []
-    s_box: list[list[bytes]] = get_static_s_box()
+    s_box: list[list[str]] = get_static_s_box()
 
-    for index in range(10):
-        key_schedule.append(get_round_key(index + 1, state_matrix, s_box))
+    key_schedule.append(state_matrix_as_hexadecimal)
+
+    for index in range(1):
+        key_schedule.append(get_round_key(index + 1, key_schedule, s_box))
 
     return key_schedule
 
-def get_static_s_box() -> list[list[bytes]]:
+def get_converted_to_hexadecimal(
+    round_key: list[list[str]]
+) -> list[list[str]]:
+    return [[hexlify(np.uint8(byte)).decode() for byte in word] for word in round_key]
+
+def get_static_s_box() -> list[list[str]]:
     static_s_box: list[list[int]] = [
         [0xA, 0,     1,    2,   3,    4,    5,    6,    7,    8,    9,   0xa,  0xb,  0xc,  0xd,  0xe,  0xf],
         [0, 0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76],
@@ -73,54 +78,65 @@ def get_static_s_box() -> list[list[bytes]]:
 
 def get_round_key(
     index: int,
-    state_matrix: list[list[str]],
-    s_box: list[list[bytes]]
-) -> list[list[bytes]]:
-    round_key: list[list[str]] = get_round_key_after_rotword(state_matrix)
-    round_key_hexadecimal: list[list[bytes]] = get_converted_round_key_to_hexadecimal(round_key)
-    round_key_subword: list[list[bytes]] = get_round_key_after_subword(s_box, round_key_hexadecimal)
-    round_constant: list[bytes] = get_generated_round_constant(index)
-
-    print(round_constant)
-
-    return round_key_subword
-
-def get_round_key_after_rotword(
-    state_matrix: list[list[str]]
+    key_schedule: list[list[str]],
+    s_box: list[list[str]]
 ) -> list[list[str]]:
-    for index, word in enumerate(state_matrix):
-        state_matrix[index] = np.roll(word, -1).tolist()
+    first_word_last_round_key: list[str] = key_schedule[-1][-4]
+    round_key: list[list[str]] = []
+    round_constant: list[str] = get_generated_round_constant(index)
 
-    return state_matrix
+    # Modifying the first word of the round key:
+    round_key.append(key_schedule[-1][-1])
+    round_key = apply_rotword(round_key)
+    round_key = apply_subword(s_box, round_key)
 
-def get_converted_round_key_to_hexadecimal(
+    # Applying XORs:
+    round_key = apply_round_constant_xor(round_key, round_constant)
+
+    # Fazer XOR entre a round_key e a first_word_last_round_key
+
+    return round_key
+
+def apply_rotword(
     round_key: list[list[str]]
-) -> list[list[bytes]]:
-    return [[hexlify(np.uint8(byte)).decode() for byte in word] for word in round_key]
+) -> list[list[str]]:
+    for index, word in enumerate(round_key):
+        round_key[index] = np.roll(word, -1).tolist()
 
-def get_round_key_after_subword(
-    s_box: list[list[bytes]],
-    round_key_hexadecimal: list[list[bytes]]
-) -> list[list[bytes]]:
-    round_key_subword: list[list[bytes]] = round_key_hexadecimal.copy()
+    return round_key
 
-    for word_index, word in enumerate(round_key_subword):
+def apply_subword(
+    s_box: list[list[str]],
+    round_key: list[list[str]]
+) -> list[str]:
+    for index, word in enumerate(round_key):
         for byte_index, byte in enumerate(word):
             byte_as_str: str = hexlify(bytes.fromhex(byte)).decode();
             s_box_row: str = byte_as_str[:1];
             s_box_column: str = byte_as_str[1:];
 
             word[byte_index] = s_box[int(s_box_row, 16) + 1][int(s_box_column, 16) + 1]
+        
+        round_key[index] = word
 
-        round_key_subword[word_index] = word
-
-    return round_key_subword
+    return round_key
 
 def get_generated_round_constant(
     index: int
-) -> list[bytes]:
-    round_constant: list[bytes] = []
+) -> list[str]:
+    round_constant: list[str] = []
     round_constant.append(hexlify(np.uint8(ROUND_CONSTANT_TABLE[index])).decode())
     for _ in range(3): round_constant.append(hexlify(np.uint8(0)).decode())
 
     return round_constant
+
+def apply_round_constant_xor(
+    round_key: list[list[str]],
+    round_constant: list[str]
+) -> list[list[str]]:
+    for word in round_key:
+        for byte_index, byte in enumerate(word):
+            xor_result: int = int(byte, 16) ^ int(round_constant[byte_index], 16)
+            word[byte_index] = hexlify(np.uint8(xor_result)).decode()
+
+    return round_key
