@@ -44,7 +44,7 @@ def get_generated_key_schedule(
 
     key_schedule.append(state_matrix_as_hexadecimal)
 
-    for index in range(1):
+    for index in range(1): # Esse for vai ser de 10.
         key_schedule.append(get_round_key(index + 1, key_schedule, s_box))
 
     return key_schedule
