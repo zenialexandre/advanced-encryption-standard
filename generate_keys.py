@@ -21,12 +21,9 @@ ROUND_CONSTANT_TABLE: dict = {
 
 def expand_keys(
     cipher_key_splitted: list[str]
-) -> any:
+) -> list[list[str]]:
     state_matrix: list = make_state_matrix(cipher_key_splitted)
-    key_schedule: list[list[str]] = get_generated_key_schedule(state_matrix)
-
-    for round_key in key_schedule:
-        print(round_key)
+    return get_generated_key_schedule(state_matrix)
 
 def make_state_matrix(
     cipher_key_splitted: list[str]
