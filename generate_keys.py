@@ -25,6 +25,9 @@ def expand_keys(
     state_matrix: list = make_state_matrix(cipher_key_splitted)
     key_schedule: list[list[str]] = get_generated_key_schedule(state_matrix)
 
+    for round_key in key_schedule:
+        print(round_key)
+
 def make_state_matrix(
     cipher_key_splitted: list[str]
 ) -> list[list[str]]:
@@ -44,7 +47,7 @@ def get_generated_key_schedule(
 
     key_schedule.append(state_matrix_as_hexadecimal)
 
-    for index in range(1): # Esse for vai ser de 10.
+    for index in range(10):
         key_schedule.append(get_round_key(index + 1, key_schedule, s_box))
 
     return key_schedule
@@ -85,15 +88,15 @@ def get_round_key(
     round_key: list[list[str]] = []
     round_constant: list[str] = get_generated_round_constant(index)
 
-    # Modifying the first word of the round key:
+    # Modifying the first word of the round_key:
     round_key.append(key_schedule[-1][-1])
     round_key = apply_rotword(round_key)
     round_key = apply_subword(s_box, round_key)
+    round_key = apply_generic_first_word_xor(round_key, round_constant)
+    round_key = apply_generic_first_word_xor(round_key, first_word_last_round_key)
 
-    # Applying XORs:
-    round_key = apply_round_constant_xor(round_key, round_constant)
-
-    # Fazer XOR entre a round_key e a first_word_last_round_key
+    # Getting the other words of the round_key
+    round_key = get_round_key_missing_words_by_xor(key_schedule, round_key)
 
     return round_key
 
@@ -130,13 +133,30 @@ def get_generated_round_constant(
 
     return round_constant
 
-def apply_round_constant_xor(
+def apply_generic_first_word_xor(
     round_key: list[list[str]],
-    round_constant: list[str]
+    generic_word: list[str]
 ) -> list[list[str]]:
     for word in round_key:
         for byte_index, byte in enumerate(word):
-            xor_result: int = int(byte, 16) ^ int(round_constant[byte_index], 16)
+            xor_result: int = int(byte, 16) ^ int(generic_word[byte_index], 16)
             word[byte_index] = hexlify(np.uint8(xor_result)).decode()
+
+    return round_key
+
+def get_round_key_missing_words_by_xor(
+    key_schedule: list[list[str]],
+    round_key: list[list[str]]
+) -> list[list[str]]:
+    for index in range(3):
+        missing_word: list[str] = []
+        equivalent_position_last_round_key_word: list[str] = key_schedule[-1][-4 + index]
+        directly_previous_word: list[str] = round_key[-1 + index]
+
+        for byte_index, byte in enumerate(directly_previous_word):
+            xor_result: int = int(byte, 16) ^ int(equivalent_position_last_round_key_word[byte_index], 16)
+            missing_word.append(hexlify(np.uint8(xor_result)).decode())
+
+        round_key.append(missing_word)
 
     return round_key
