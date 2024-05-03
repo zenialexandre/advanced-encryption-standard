@@ -1,6 +1,6 @@
-from program_gui import generate_program_gui
-from generate_keys import expand_keys
-from encrypt_data import ciphering_process
+from ui import generate_program_gui
+from keys import expand_keys
+from cipher import ciphering_process
 from constants import CONTENT
 import os
 import shutil
