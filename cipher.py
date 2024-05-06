@@ -1,4 +1,3 @@
-import os
 import numpy as np
 from binascii import hexlify
 from constants import CONTENT
