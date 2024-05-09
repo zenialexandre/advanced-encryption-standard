@@ -1,4 +1,6 @@
+import numpy as np
 from binascii import hexlify
+from constants import UTF_8
 
 def get_static_s_box() -> list[list[str]]:
     static_s_box: list[list[int]] = [
@@ -65,3 +67,25 @@ def get_static_e_table() -> list[list[str]]:
         [0xf, 0x39, 0x4b, 0xdd, 0x7c, 0x84, 0x97, 0xa2, 0xfd, 0x1c, 0x24, 0x6c, 0xb4, 0xc7, 0x52, 0xf6, 0x01]
     ]
     return [[hexlify(bytes([byte])).decode() for byte in row] for row in static_e_table]
+
+def make_state_matrix(
+    generic_list: list[str]
+) -> list[list[str]]:
+    state_matrix: list[list[str]] = []
+
+    for row in range(0, 16, 4):
+        state_matrix.append(generic_list[row: row + 4])
+
+    return state_matrix
+
+def get_converted_to_hexadecimal(
+    generic_matrix: list[list[str]]
+) -> list[list[str]]:
+    for row in generic_matrix:
+        for byte_index, byte in enumerate(row):
+            if (byte.isdigit()):
+                row[byte_index] = hexlify(np.uint8(byte)).decode(UTF_8)
+            else:
+                row[byte_index] = hexlify(bytes(byte, UTF_8)).decode(UTF_8)
+
+    return generic_matrix

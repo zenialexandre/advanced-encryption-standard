@@ -1,6 +1,7 @@
 import numpy as np
 from binascii import hexlify
-from utils import get_static_s_box
+from constants import UTF_8
+from utils import get_static_s_box, make_state_matrix, get_converted_to_hexadecimal
 
 '''
     REMINDER: The Words of the RoundKeys are oriented as rows.
@@ -23,18 +24,8 @@ ROUND_CONSTANT_TABLE: dict = {
 def expand_keys(
     cipher_key_splitted: list[str]
 ) -> list[list[str]]:
-    state_matrix: list = make_state_matrix(cipher_key_splitted)
+    state_matrix: list[list[str]] = make_state_matrix(cipher_key_splitted)
     return get_generated_key_schedule(state_matrix)
-
-def make_state_matrix(
-    cipher_key_splitted: list[str]
-) -> list[list[str]]:
-    state_matrix: list[list[str]] = []
-
-    for row in range(0, 16, 4):
-        state_matrix.append(cipher_key_splitted[row: row + 4])
-
-    return state_matrix
 
 def get_generated_key_schedule(
     state_matrix: list[list[str]]
@@ -49,11 +40,6 @@ def get_generated_key_schedule(
         key_schedule.append(get_round_key(index + 1, key_schedule, s_box))
 
     return key_schedule
-
-def get_converted_to_hexadecimal(
-    round_key: list[list[str]]
-) -> list[list[str]]:
-    return [[hexlify(np.uint8(byte)).decode() for byte in word] for word in round_key]
 
 def get_round_key(
     index: int,
@@ -90,12 +76,12 @@ def apply_subword(
 ) -> list[str]:
     for index, word in enumerate(round_key):
         for byte_index, byte in enumerate(word):
-            byte_as_str: str = hexlify(bytes.fromhex(byte)).decode();
+            byte_as_str: str = hexlify(bytes.fromhex(byte)).decode(UTF_8);
             s_box_row: str = byte_as_str[:1];
             s_box_column: str = byte_as_str[1:];
 
             word[byte_index] = s_box[int(s_box_row, 16) + 1][int(s_box_column, 16) + 1]
-        
+
         round_key[index] = word
 
     return round_key
@@ -104,8 +90,8 @@ def get_generated_round_constant(
     index: int
 ) -> list[str]:
     round_constant: list[str] = []
-    round_constant.append(hexlify(np.uint8(ROUND_CONSTANT_TABLE[index])).decode())
-    for _ in range(3): round_constant.append(hexlify(np.uint8(0)).decode())
+    round_constant.append(hexlify(np.uint8(ROUND_CONSTANT_TABLE[index])).decode(UTF_8))
+    for _ in range(3): round_constant.append(hexlify(np.uint8(0)).decode(UTF_8))
 
     return round_constant
 
@@ -116,7 +102,7 @@ def apply_generic_first_word_xor(
     for word in round_key:
         for byte_index, byte in enumerate(word):
             xor_result: int = int(byte, 16) ^ int(generic_word[byte_index], 16)
-            word[byte_index] = hexlify(np.uint8(xor_result)).decode()
+            word[byte_index] = hexlify(np.uint8(xor_result)).decode(UTF_8)
 
     return round_key
 
@@ -131,7 +117,7 @@ def get_round_key_missing_words_by_xor(
 
         for byte_index, byte in enumerate(directly_previous_word):
             xor_result: int = int(byte, 16) ^ int(equivalent_position_last_round_key_word[byte_index], 16)
-            missing_word.append(hexlify(np.uint8(xor_result)).decode())
+            missing_word.append(hexlify(np.uint8(xor_result)).decode(UTF_8))
 
         round_key.append(missing_word)
 
