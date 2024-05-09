@@ -81,11 +81,27 @@ def make_state_matrix(
 def get_converted_to_hexadecimal(
     generic_matrix: list[list[str]]
 ) -> list[list[str]]:
-    for row in generic_matrix:
-        for byte_index, byte in enumerate(row):
+    for word in generic_matrix:
+        for byte_index, byte in enumerate(word):
             if (byte.isdigit()):
-                row[byte_index] = hexlify(np.uint8(byte)).decode(UTF_8)
+                word[byte_index] = hexlify(np.uint8(byte)).decode(UTF_8)
             else:
-                row[byte_index] = hexlify(bytes(byte, UTF_8)).decode(UTF_8)
+                word[byte_index] = hexlify(bytes(byte, UTF_8)).decode(UTF_8)
+
+    return generic_matrix
+
+def apply_subword_or_subbytes(
+    s_box: list[list[str]],
+    generic_matrix: list[list[str]]
+) -> list[str]:
+    for index, word in enumerate(generic_matrix):
+        for byte_index, byte in enumerate(word):
+            byte_as_str: str = hexlify(bytes.fromhex(byte)).decode(UTF_8);
+            s_box_row: str = byte_as_str[:1];
+            s_box_column: str = byte_as_str[1:];
+
+            word[byte_index] = s_box[int(s_box_row, 16) + 1][int(s_box_column, 16) + 1]
+
+        generic_matrix[index] = word
 
     return generic_matrix

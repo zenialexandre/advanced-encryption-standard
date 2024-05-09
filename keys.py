@@ -1,7 +1,11 @@
 import numpy as np
 from binascii import hexlify
 from constants import UTF_8
-from utils import get_static_s_box, make_state_matrix, get_converted_to_hexadecimal
+from utils import \
+    get_static_s_box, \
+    make_state_matrix, \
+    get_converted_to_hexadecimal, \
+    apply_subword_or_subbytes
 
 '''
     REMINDER: The Words of the RoundKeys are oriented as rows.
@@ -53,7 +57,7 @@ def get_round_key(
     # Modifying the first word of the round_key:
     round_key.append(key_schedule[-1][-1])
     round_key = apply_rotword(round_key)
-    round_key = apply_subword(s_box, round_key)
+    round_key = apply_subword_or_subbytes(s_box, round_key)
     round_key = apply_generic_first_word_xor(round_key, round_constant)
     round_key = apply_generic_first_word_xor(round_key, first_word_last_round_key)
 
@@ -67,22 +71,6 @@ def apply_rotword(
 ) -> list[list[str]]:
     for index, word in enumerate(round_key):
         round_key[index] = np.roll(word, -1).tolist()
-
-    return round_key
-
-def apply_subword(
-    s_box: list[list[str]],
-    round_key: list[list[str]]
-) -> list[str]:
-    for index, word in enumerate(round_key):
-        for byte_index, byte in enumerate(word):
-            byte_as_str: str = hexlify(bytes.fromhex(byte)).decode(UTF_8);
-            s_box_row: str = byte_as_str[:1];
-            s_box_column: str = byte_as_str[1:];
-
-            word[byte_index] = s_box[int(s_box_row, 16) + 1][int(s_box_column, 16) + 1]
-
-        round_key[index] = word
 
     return round_key
 
