@@ -100,7 +100,7 @@ def get_round_key_missing_words_by_xor(
 ) -> list[list[str]]:
     for index in range(3):
         missing_word: list[str] = []
-        equivalent_position_last_round_key_word: list[str] = key_schedule[-1][-4 + index]
+        equivalent_position_last_round_key_word: list[str] = key_schedule[-1][index + 1]
         directly_previous_word: list[str] = round_key[-1]
 
         for byte_index, byte in enumerate(directly_previous_word):
