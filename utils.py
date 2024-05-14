@@ -73,8 +73,15 @@ def make_state_matrix(
 ) -> list[list[str]]:
     state_matrix: list[list[str]] = []
 
-    for row in range(0, 16, 4):
-        state_matrix.append(generic_list[row: row + 4])
+    num_byte = 0
+    
+    for col in range(4):
+        line = []
+        for row in range(4):
+            line.append(generic_list[col + num_byte])
+            num_byte += 4
+        state_matrix.append(line)
+        num_byte = 0
 
     return state_matrix
 
