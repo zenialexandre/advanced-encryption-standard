@@ -29,7 +29,6 @@ def expand_keys(
     cipher_key_splitted: list[str]
 ) -> list[list[str]]:
     state_matrix: list[list[str]] = make_state_matrix(cipher_key_splitted)
-    print(state_matrix)
     return get_generated_key_schedule(state_matrix)
 
 def get_generated_key_schedule(

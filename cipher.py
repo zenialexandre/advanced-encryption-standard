@@ -214,11 +214,12 @@ def apply_shift_rows(
 def apply_mix_columns(
     exit_state_matrix: list[list[str]]
 ) -> list[list[str]]:
+    shift_rows_matrix: list[list[str]] = np.copy(exit_state_matrix)
     l_table: list[list[str]] = get_static_l_table()
     e_table: list[list[str]] = get_static_e_table()
 
     for index, word in enumerate(exit_state_matrix):
-        word_from_shift_rows: list[str] = exit_state_matrix[index]
+        word_from_shift_rows: list[str] = shift_rows_matrix[index]
 
         for byte_index, byte in enumerate(word):
             multiplication_matrix_by_byte: list[int] = MULTIPLICATION_MATRIX[byte_index]
@@ -246,19 +247,19 @@ def get_calculated_byte_from_mix_columns(
         multiplication_matrix_element: int = multiplication_matrix_by_byte[byte_index]
 
         if (byte == '00' or multiplication_matrix_element == 0x00):
-            mix_columns_formula.append(0)
+            mix_columns_formula.append(hexlify(bytes(0x00)).decode(UTF_8))
         elif (byte == '01' or multiplication_matrix_element == 0x01):
             if (byte == '01'):
-                mix_columns_formula.append(multiplication_matrix_element)
+                mix_columns_formula.append(hexlify(bytes(multiplication_matrix_element)).decode(UTF_8))
             elif (multiplication_matrix_element == 0x01):
-                mix_columns_formula.append(int.from_bytes(bytes(f'Ox{byte}', UTF_8)))
+                mix_columns_formula.append(byte)
         else:
             (galois_first_value, galois_second_value) = get_values_from_l_table(
                 l_table,
                 byte,
                 multiplication_matrix_element
             )
-            galois_multiplication_result: int = galois_first_value + galois_second_value
+            galois_multiplication_result: int = int(hex(int(galois_first_value, 16) + int(galois_second_value, 16)), 16)
 
             if (galois_multiplication_result > 0xff):
                 galois_multiplication_result -= 0xff
@@ -271,7 +272,10 @@ def get_calculated_byte_from_mix_columns(
     mix_columns_formula_fourth_value: int = mix_columns_formula[3]
 
     mix_columns_formula_result: int = \
-        mix_columns_formula_first_value ^ mix_columns_formula_second_value ^ mix_columns_formula_third_value ^ mix_columns_formula_fourth_value
+        int(mix_columns_formula_first_value, 16) \
+        ^ int(mix_columns_formula_second_value, 16) \
+        ^ int(mix_columns_formula_third_value, 16) \
+        ^ int(mix_columns_formula_fourth_value, 16)
 
     return hexlify(np.uint8(mix_columns_formula_result)).decode(UTF_8)
 
@@ -279,7 +283,7 @@ def get_values_from_l_table(
     l_table: list[list[str]],
     byte: str,
     multiplication_matrix_element: int
-) -> tuple[int, int]:
+) -> tuple[str, str]:
     multiplication_matrix_element_str: str = hexlify(np.uint8(multiplication_matrix_element)).decode(UTF_8)
     l_table_row_for_byte: str = byte[:1]
     l_table_column_for_byte: str = byte[1:]
@@ -287,29 +291,20 @@ def get_values_from_l_table(
     l_table_column_for_multiplication_matrix_element: str = multiplication_matrix_element_str[1:]
 
     return (
-        int.from_bytes(
-            bytes(l_table[int(l_table_row_for_byte, 16) + 1][int(l_table_column_for_byte, 16) + 1], UTF_8)
-        ),
-        int.from_bytes(
-            bytes(l_table \
-                [int(l_table_row_for_multiplication_matrix_element, 16) + 1] \
-                [int(l_table_column_for_multiplication_matrix_element, 16) + 1],
-                UTF_8
-            )
-        )
+        l_table[int(l_table_row_for_byte, 16) + 1][int(l_table_column_for_byte, 16) + 1],
+        l_table[int(l_table_row_for_multiplication_matrix_element, 16) + 1] \
+            [int(l_table_column_for_multiplication_matrix_element, 16) + 1]
     )
 
 def get_value_from_e_table(
     e_table: list[list[str]],
     galois_multiplication_result: int
-) -> int:
+) -> str:
     galois_multiplication_result_str = hexlify(np.uint8(galois_multiplication_result)).decode(UTF_8)
     e_table_row: str = galois_multiplication_result_str[:1]
     e_table_column: str = galois_multiplication_result_str[1:]
 
-    return int.from_bytes(
-        bytes(e_table[int(e_table_row, 16) + 1][int(e_table_column, 16) + 1], UTF_8)
-    )
+    return e_table[int(e_table_row, 16) + 1][int(e_table_column, 16) + 1]
 
 def get_ciphered_data_from_matrix(
     final_result: list[str]
