@@ -33,7 +33,7 @@ def ciphering_process(
     with open(input_file_path, 'rb') as data:
         input_file_path_data: bytes = data.read()
 
-    input_file_path_data_str = input_file_path_data.decode().strip()
+    input_file_path_data_str = input_file_path_data.decode(UTF_8).strip()
 
     for data_slice in iterate_by_data_slices(input_file_path_data_str):
         entrance_state_matrix: list[list[str]] = []
@@ -41,16 +41,26 @@ def ciphering_process(
 
         if (len(data_slice) < 16):
             data_slice = apply_block_filling_schema(data_slice, 16)
-        
+
         entrance_state_matrix = get_converted_to_hexadecimal(
-            make_state_matrix([char for char in data_slice])
+            make_state_matrix_by_slice([char for char in data_slice])
         )
-    
+
+        print('\n')
+        print('Entrance State Matrix')
+        for word in entrance_state_matrix:
+            print(word)
+
         exit_state_matrix = execute_process_by_rounds(
             key_schedule,
             entrance_state_matrix,
             exit_state_matrix
         )
+
+        print('\n')
+        print('Exit State Matrix')
+        for word in exit_state_matrix:
+            print(word)
         final_result.extend([word for word in exit_state_matrix])
 
     ciphered_data = get_ciphered_data_from_matrix(final_result)
@@ -78,6 +88,28 @@ def apply_block_filling_schema(
         return data_slice
     else:
         raise Exception("PKCS#7 only accepts blocks from 1 to 255 bytes.")
+
+def make_state_matrix_by_slice(
+    data_slice: list[str]
+) -> list[list[str]]:
+    data_slice_copy: list[str] = data_slice.copy()
+    state_matrix: list[list[str]] = []
+
+    for _ in range(4):
+        state_matrix_row: list[str] = []
+
+        for byte_index, byte in enumerate(data_slice_copy):
+            if (byte_index < 4):
+                state_matrix_row.append(byte)
+            elif (byte_index >= 4):
+                break
+
+        state_matrix.append(state_matrix_row)
+
+        for byte in state_matrix_row:
+            data_slice_copy.remove(byte)
+
+    return state_matrix
 
 def execute_process_by_rounds(
     key_schedule: list[list[str]],
@@ -130,15 +162,52 @@ def apply_round_key_xor(
 def apply_shift_rows(
     exit_state_matrix: list[list[str]]
 ) -> list[list[str]]:
-    for index, word in enumerate(exit_state_matrix):
-        if (index == 0):
-            pass
-        elif (index == 1):
-            exit_state_matrix[index] = np.roll(word, -1).tolist()
-        elif (index == 2):
-            exit_state_matrix[index] = np.roll(word, -2).tolist()
-        elif (index == 3):
-            exit_state_matrix[index] = np.roll(word, 1).tolist()
+    iteration_counter: int = 0
+
+    for row in range(len(exit_state_matrix)):
+        if (iteration_counter == 1):
+            break
+        iteration_counter += 1
+
+        for column in range(len(exit_state_matrix[row])):
+            if ( \
+                (row == 0 and column == 0) or \
+                (row == 1 and column == 1) or \
+                (row == 2 and column == 2) or \
+                (row == 3 and column == 3) \
+            ):
+                pass
+            else:
+                if (column == 1):
+                    first_value: str = exit_state_matrix[0][column]
+                    second_value: str = exit_state_matrix[1][column]
+                    third_value: str = exit_state_matrix[2][column]
+                    fourth_value: str = exit_state_matrix[3][column]
+
+                    exit_state_matrix[0][column] = second_value
+                    exit_state_matrix[1][column] = third_value
+                    exit_state_matrix[2][column] = fourth_value
+                    exit_state_matrix[3][column] = first_value
+                elif (column == 2):
+                    first_value: str = exit_state_matrix[0][column]
+                    second_value: str = exit_state_matrix[1][column]
+                    third_value: str = exit_state_matrix[2][column]
+                    fourth_value: str = exit_state_matrix[3][column]
+
+                    exit_state_matrix[0][column] = third_value
+                    exit_state_matrix[1][column] = fourth_value
+                    exit_state_matrix[2][column] = first_value
+                    exit_state_matrix[3][column] = second_value
+                elif (column == 3):
+                    first_value: str = exit_state_matrix[0][column]
+                    second_value: str = exit_state_matrix[1][column]
+                    third_value: str = exit_state_matrix[2][column]
+                    fourth_value: str = exit_state_matrix[3][column]
+
+                    exit_state_matrix[0][column] = fourth_value
+                    exit_state_matrix[1][column] = first_value
+                    exit_state_matrix[2][column] = second_value
+                    exit_state_matrix[3][column] = third_value
 
     return exit_state_matrix
 
