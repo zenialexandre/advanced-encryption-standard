@@ -46,7 +46,6 @@ def ciphering_process(
             make_state_matrix_by_slice([char for char in data_slice])
         )
 
-        print('\n')
         print('Entrance State Matrix')
         for word in entrance_state_matrix:
             print(word)
@@ -118,13 +117,13 @@ def execute_process_by_rounds(
 ) -> list[list[str]]:
     s_box: list[list[str]] = get_static_s_box()
 
-    for index in range(10):
-        exit_state_matrix = apply_round_key_xor(
-            entrance_state_matrix,
-            key_schedule[0]
-        )
+    exit_state_matrix = apply_round_key_xor(
+        entrance_state_matrix,
+        key_schedule[0]
+    )
 
-        if (index + 1 >= 1 or index + 1 <= 9):
+    for index in range(10):
+        if (index < 9):
             exit_state_matrix = apply_subword_or_subbytes(
                 s_box,
                 exit_state_matrix
@@ -133,9 +132,9 @@ def execute_process_by_rounds(
             exit_state_matrix = apply_mix_columns(exit_state_matrix)
             exit_state_matrix = apply_round_key_xor(
                 exit_state_matrix,
-                key_schedule[index]
+                key_schedule[index + 1]
             )
-        elif (index + 1 == 10):
+        elif (index == 9):
             exit_state_matrix = apply_subword_or_subbytes(
                 s_box,
                 exit_state_matrix
@@ -143,7 +142,7 @@ def execute_process_by_rounds(
             exit_state_matrix = apply_shift_rows(exit_state_matrix)
             exit_state_matrix = apply_round_key_xor(
                 exit_state_matrix,
-                key_schedule[index]
+                key_schedule[index + 1]
             )
 
     return exit_state_matrix
