@@ -247,10 +247,10 @@ def get_calculated_byte_from_mix_columns(
         multiplication_matrix_element: int = multiplication_matrix_by_byte[byte_index]
 
         if (byte == '00' or multiplication_matrix_element == 0x00):
-            mix_columns_formula.append(hexlify(bytes(0x00)).decode(UTF_8))
+            mix_columns_formula.append(hex(0))
         elif (byte == '01' or multiplication_matrix_element == 0x01):
             if (byte == '01'):
-                mix_columns_formula.append(hexlify(bytes(multiplication_matrix_element)).decode(UTF_8))
+                mix_columns_formula.append(hex(multiplication_matrix_element))
             elif (multiplication_matrix_element == 0x01):
                 mix_columns_formula.append(byte)
         else:
