@@ -24,18 +24,16 @@ MULTIPLICATION_MATRIX: list[list[int]] = [
 def ciphering_process(
     input_file_path: str,
     output_file_path: str,
-    key_schedule: list[list[str]]
+    key_schedule: list[list[str]],
+    file_type: str
 ) -> None:
     input_file_path_data_str: str = ''
     ciphered_data: str = ''
     final_result: list[list[list[str]]] = []
+    
+    input_file_path_data = read_file_data(input_file_path, file_type)
 
-    with open(input_file_path, 'rb') as data:
-        input_file_path_data: bytes = data.read()
-
-    input_file_path_data_str = input_file_path_data.decode(UTF_8).strip()
-
-    for data_slice in iterate_by_data_slices(input_file_path_data_str):
+    for data_slice in iterate_by_data_slices(input_file_path_data):
         entrance_state_matrix: list[list[str]] = []
         exit_state_matrix: list[list[str]] = []
 
@@ -67,6 +65,20 @@ def ciphering_process(
 
     #with open(output_file_path, 'wb') as data:
     #    data.write(ciphered_data)
+
+def read_file_data(input_file_path: str, file_type: str):
+    with open(input_file_path, 'rb') as data:
+        data: bytes = data.read()
+
+    if(file_type == 'Text'):
+        return data.decode(UTF_8).strip()
+    else:
+        bytes_array = []
+
+        for byte in data:
+            bytes_array.append(byte)
+
+        return bytes_array
 
 def iterate_by_data_slices(
     input_file_path_data_str: str
