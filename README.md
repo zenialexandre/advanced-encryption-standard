@@ -1,7 +1,7 @@
 # advanced-encryption-standard
 Raw implementation of the AES (Advanced Encryption Standard) for ciphering.
 
-## GUI
+## 👾
 ![image](https://github.com/zenialexandre/advanced-encryption-standard/assets/84157233/a80e5caf-31df-40d5-b6a1-94df69185b95) <br>
 
 -> Field 'Choose the file to be uploaded:' must hold the path to the file that will be ciphered. <br>
