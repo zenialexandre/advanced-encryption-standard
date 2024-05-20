@@ -2,7 +2,6 @@ import numpy as np
 from binascii import hexlify
 from constants import UTF_8
 from utils import \
-    make_state_matrix, \
     get_converted_to_hexadecimal, \
     get_static_s_box, \
     apply_subword_or_subbytes, \
@@ -24,18 +23,15 @@ MULTIPLICATION_MATRIX: list[list[int]] = [
 def ciphering_process(
     input_file_path: str,
     output_file_path: str,
+    file_type: str,
     key_schedule: list[list[str]]
 ) -> None:
-    input_file_path_data_str: str = ''
     ciphered_data: str = ''
     final_result: list[list[list[str]]] = []
 
-    with open(input_file_path, 'rb') as data:
-        input_file_path_data: bytes = data.read()
+    input_file_path_data = read_file_data(input_file_path, file_type)
 
-    input_file_path_data_str = input_file_path_data.decode(UTF_8).strip()
-
-    for data_slice in iterate_by_data_slices(input_file_path_data_str):
+    for data_slice in iterate_by_data_slices(input_file_path_data):
         entrance_state_matrix: list[list[str]] = []
         exit_state_matrix: list[list[str]] = []
 
@@ -46,27 +42,34 @@ def ciphering_process(
             make_state_matrix_by_slice([char for char in data_slice])
         )
 
-        print('Entrance State Matrix')
-        for word in entrance_state_matrix:
-            print(word)
-
         exit_state_matrix = execute_process_by_rounds(
             key_schedule,
             entrance_state_matrix,
             exit_state_matrix
         )
-
-        print('\n')
-        print('Exit State Matrix')
-        for word in exit_state_matrix:
-            print(word)
         final_result.extend([word for word in exit_state_matrix])
 
-    ciphered_data = get_ciphered_data_from_matrix(final_result)
-    print(ciphered_data)
+    ciphered_data = get_ciphered_data_from_rounds(final_result)
 
-    #with open(output_file_path, 'wb') as data:
-    #    data.write(ciphered_data)
+    with open(output_file_path, 'wb') as data:
+        data.write(ciphered_data.encode(UTF_8))
+
+def read_file_data(
+    input_file_path: str,
+    file_type: str
+) -> any:
+    with open(input_file_path, 'rb') as data:
+        data: bytes = data.read()
+
+    if (file_type == 'Text'):
+        return data.decode(UTF_8).strip()
+    else:
+        bytes_array: list[bytes] = []
+
+        for byte in data:
+            bytes_array.append(byte)
+
+        return [hexlify(np.uint8(byte)).decode(UTF_8).strip() for byte in bytes_array]
 
 def iterate_by_data_slices(
     input_file_path_data_str: str
@@ -305,7 +308,7 @@ def get_value_from_e_table(
 
     return e_table[int(e_table_row, 16) + 1][int(e_table_column, 16) + 1]
 
-def get_ciphered_data_from_matrix(
+def get_ciphered_data_from_rounds(
     final_result: list[str]
 ) -> str:
     ciphered_file_data: str = ''

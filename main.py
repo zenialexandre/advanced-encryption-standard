@@ -6,11 +6,12 @@ import os
 import shutil
 
 def main() -> None:
-    (file_path, output_file_name, cipher_key_splitted) = generate_program_gui()
+    (file_path, output_file_name, file_type, cipher_key_splitted) = generate_program_gui()
     input_file_path: str = upload_inputted_file(file_path)
     start_ciphering_process(
         input_file_path,
         output_file_name,
+        file_type,
         expand_keys(cipher_key_splitted)
     )
 
@@ -31,11 +32,13 @@ def upload_inputted_file(
 def start_ciphering_process(
     input_file_path: str,
     output_file_name: str,
+    file_type: str,
     key_schedule: list[list[str]]
 ) -> None:
     ciphering_process(
         input_file_path,
         os.path.join(CONTENT, f'{output_file_name}.bin'),
+        file_type,
         key_schedule
     )
 
