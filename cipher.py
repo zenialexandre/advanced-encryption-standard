@@ -1,8 +1,8 @@
 import numpy as np
+from os import path
 from binascii import hexlify
 from constants import UTF_8
 from utils import \
-    get_converted_to_hexadecimal, \
     get_static_s_box, \
     apply_subword_or_subbytes, \
     get_static_l_table, \
@@ -12,6 +12,13 @@ from utils import \
     Block mode of operation: ECB;
     Block filling schema: PKCS#7;
 '''
+
+EXTRA_BLOCK: list[list[str]] = [
+    ['16', '16', '16', '16'],
+    ['16', '16', '16', '16'],
+    ['16', '16', '16', '16'],
+    ['16', '16', '16', '16']
+]
 
 MULTIPLICATION_MATRIX: list[list[int]] = [
     [0x02, 0x03, 0x01, 0x01],
@@ -23,13 +30,10 @@ MULTIPLICATION_MATRIX: list[list[int]] = [
 def ciphering_process(
     input_file_path: str,
     output_file_path: str,
-    file_type: str,
     key_schedule: list[list[str]]
 ) -> None:
-    ciphered_data: str = ''
-    final_result: list[list[list[str]]] = []
-
-    input_file_path_data = read_file_data(input_file_path, file_type)
+    final_ciphered_result: list[str] = []
+    input_file_path_data = read_file_data(input_file_path)
 
     for data_slice in iterate_by_data_slices(input_file_path_data):
         entrance_state_matrix: list[list[str]] = []
@@ -38,38 +42,41 @@ def ciphering_process(
         if (len(data_slice) < 16):
             data_slice = apply_block_filling_schema(data_slice, 16)
 
-        entrance_state_matrix = get_converted_to_hexadecimal(
-            make_state_matrix_by_slice([char for char in data_slice])
-        )
+        entrance_state_matrix = make_state_matrix_by_slice([char for char in data_slice])
 
         exit_state_matrix = execute_process_by_rounds(
             key_schedule,
             entrance_state_matrix,
             exit_state_matrix
         )
-        final_result.extend([word for word in exit_state_matrix])
+        final_ciphered_result.append([word for word in exit_state_matrix])
 
-    ciphered_data = get_ciphered_data_from_rounds(final_result)
+    if (len(input_file_path_data) == 16):
+        extra_exit_state_matrix: list[list[str]] = []
 
-    with open(output_file_path, 'wb') as data:
-        data.write(ciphered_data.encode(UTF_8))
+        extra_exit_state_matrix = execute_process_by_rounds(
+            key_schedule,
+            EXTRA_BLOCK,
+            extra_exit_state_matrix
+        )
+        final_ciphered_result.append([word for word in extra_exit_state_matrix])
+
+    write_ciphered_result(output_file_path, final_ciphered_result)
 
 def read_file_data(
-    input_file_path: str,
-    file_type: str
+    input_file_path: str
 ) -> any:
     with open(input_file_path, 'rb') as data:
         data: bytes = data.read()
-
-    if (file_type == 'Text'):
-        return data.decode(UTF_8).strip()
-    else:
         bytes_array: list[bytes] = []
 
         for byte in data:
-            bytes_array.append(byte)
+            if (str(byte).isdigit()):
+                bytes_array.append(hexlify(np.uint8(byte)).decode(UTF_8))
+            else:
+                bytes_array.append(str(byte))
 
-        return [hexlify(np.uint8(byte)).decode(UTF_8).strip() for byte in bytes_array]
+        return bytes_array
 
 def iterate_by_data_slices(
     input_file_path_data_str: str
@@ -308,13 +315,16 @@ def get_value_from_e_table(
 
     return e_table[int(e_table_row, 16) + 1][int(e_table_column, 16) + 1]
 
-def get_ciphered_data_from_rounds(
-    final_result: list[str]
-) -> str:
-    ciphered_file_data: str = ''
+def write_ciphered_result(
+    output_file_path: str,
+    final_ciphered_result: list[list[str]]
+) -> None:
+    if (path.exists(output_file_path)):
+        with open(output_file_path, 'w') as _:
+            pass
 
-    for block in final_result:
-        for byte in block:
-            ciphered_file_data += byte
-
-    return ciphered_file_data
+    with open(output_file_path, 'ab') as data:
+        for exit_state_matrix in final_ciphered_result:
+            for word in exit_state_matrix:
+                for byte in word:
+                    data.write(int(byte, 16).to_bytes())

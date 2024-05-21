@@ -1,17 +1,15 @@
 import PySimpleGUI as psg
-from constants import FILE_PATH, OUTPUT_FILE_NAME, CIPHER_KEY, OK, CANCEL, FILE_TYPE
+from constants import FILE_PATH, OUTPUT_FILE_NAME, CIPHER_KEY, OK, CANCEL
 
 '''
-    This GUI returns a tuple of three 'str' and a 'list[str]'.
-    [file_path, output_file_name, file_type, cipher_key_splitted].
+    This GUI returns a tuple of two 'str' and a 'list[str]'.
+    [file_path, output_file_name, cipher_key_splitted].
 '''
-def generate_program_gui() -> tuple[str, str, str, list[str]]:
+def generate_program_gui() -> tuple[str, str, list[str]]:
     psg.theme('DarkTeal2')
     window_layout: list[list] = [
         [psg.T('')],
         [psg.Text('Choose the file to be uploaded: '), psg.Input(), psg.FileBrowse(key=FILE_PATH)],
-        [psg.T('')],
-        [psg.Text('Choose the type of the file: '), psg.Combo(['-', 'Text', 'Binary'], default_value='-', key=FILE_TYPE)],
         [psg.T('')],
         [psg.Text('The name of the output file: '), psg.Input(key=OUTPUT_FILE_NAME)],
         [psg.T('')],
@@ -36,15 +34,11 @@ def generate_program_gui() -> tuple[str, str, str, list[str]]:
         elif (event == OK):
             if (all(map(str.strip, [values[key] for key in input_list]))):
                 cipher_key_splitted: list[str] = values[CIPHER_KEY].split(',')
-                file_type: str = values[FILE_TYPE]
 
-                if (file_type == '-' or (file_type != 'Text' and file_type != 'Binary')):
-                    prompt('Please, choose the type of the file!')
+                if (len(cipher_key_splitted) == 16):
+                    return values[FILE_PATH], values[OUTPUT_FILE_NAME], cipher_key_splitted
                 else:
-                    if (len(cipher_key_splitted) == 16):
-                        return values[FILE_PATH], values[OUTPUT_FILE_NAME], file_type, cipher_key_splitted
-                    else:
-                        prompt('The cipher key must have 16 bytes.')
+                    prompt('The cipher key must have 16 bytes.')
             else:
                 prompt('Please, fill in the necessary fields.')
 
