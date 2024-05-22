@@ -34,15 +34,17 @@ def ciphering_process(
 ) -> None:
     final_ciphered_result: list[str] = []
     input_file_path_data = read_file_data(input_file_path)
+    data_slices: list[list[str]] = get_data_slices_to_iterate(input_file_path_data)
 
-    for data_slice in iterate_by_data_slices(input_file_path_data):
+    for data_slice in data_slices:
+        data_slice_copy: list[str] = np.copy(data_slice).tolist()
         entrance_state_matrix: list[list[str]] = []
         exit_state_matrix: list[list[str]] = []
 
-        if (len(data_slice) < 16):
-            data_slice = apply_block_filling_schema(data_slice, 16)
+        if (len(data_slice_copy) < 16):
+            data_slice_copy = apply_block_filling_schema(data_slice_copy, 16)
 
-        entrance_state_matrix = make_state_matrix_by_slice([char for char in data_slice])
+        entrance_state_matrix = make_state_matrix_by_slice([char for char in data_slice_copy])
 
         exit_state_matrix = execute_process_by_rounds(
             key_schedule,
@@ -51,7 +53,7 @@ def ciphering_process(
         )
         final_ciphered_result.append([word for word in exit_state_matrix])
 
-    if (len(input_file_path_data) == 16):
+    if (len(data_slices[-1]) == 16):
         extra_exit_state_matrix: list[list[str]] = []
 
         extra_exit_state_matrix = execute_process_by_rounds(
@@ -78,21 +80,25 @@ def read_file_data(
 
         return bytes_array
 
-def iterate_by_data_slices(
-    input_file_path_data_str: str
-):
-    for index in range(0, len(input_file_path_data_str), 16):
-        yield input_file_path_data_str[index:index + 16]
+def get_data_slices_to_iterate(
+    input_file_path_data: str
+) -> list[list[str]]:
+    data_slices: list[list[str]] = []
+
+    for index in range(0, len(input_file_path_data), 16):
+        data_slices.append(input_file_path_data[index:index + 16])
+
+    return data_slices
 
 def apply_block_filling_schema(
-    data_slice: str,
+    data_slice: list[str],
     default_block_size: int
 ) -> str:
     if (default_block_size >= 1 and default_block_size <= 255):
         number_of_missing_bytes: int = default_block_size - len(data_slice)
 
         for _ in range(number_of_missing_bytes):
-            data_slice += str(number_of_missing_bytes)
+            data_slice.append(str(number_of_missing_bytes))
 
         return data_slice
     else:
