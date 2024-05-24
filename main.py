@@ -1,3 +1,5 @@
+# Alexandre Zeni, Bruno Gabriel de Sousa and Leonardo Oliani Fernandes
+
 from ui import generate_program_gui
 from keys import expand_keys
 from cipher import ciphering_process
